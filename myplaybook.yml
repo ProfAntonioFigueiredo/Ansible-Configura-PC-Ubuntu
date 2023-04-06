@@ -1,0 +1,208 @@
+---
+- name: Ansible-Install-Apps-Iamabrantes
+  hosts: localhost
+  connection: local
+  tasks:
+
+    - name: Installing Linux Apps
+      become: true
+      apt:
+        name: '{{ item }}'
+        install_recommends: yes
+        state: present
+      loop:
+          - vim
+          - htop
+          - curl
+          - wget
+          - ncdu
+          - tree
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - python3-pip
+          - make
+          - git
+          - bash-completion
+          - gnupg-agent
+          - zsh
+          - flameshot
+          - fonts-hack
+          - tilix
+          - mlocate
+          - jq
+          - mtr
+
+    - block:
+      - name: Installing AWS CLI via pip3
+        become: true
+        pip:
+          name: awscli
+          executable: pip3
+
+    - block:
+      - name: Installing Google Key
+        become: true
+        apt_key: 
+          url: 'https://dl.google.com/linux/linux_signing_key.pub'
+          state: present
+      - name: Installing Google Repository
+        become: true
+        apt_repository:
+          repo: 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main'
+          state: present
+          filename: google-chrome
+      - name: Installing Google Chrome
+        become: true
+        apt:
+          name: google-chrome-stable
+
+    - block:
+      - name: Installing Vagrant 2.3.4
+        become: true
+        unarchive:
+          src: 'https://releases.hashicorp.com/vagrant/2.3.4/vagrant_2.3.4_linux_amd64.zip'
+          dest: /usr/local/bin
+          remote_src: yes
+
+    - block:
+      - name: Installing Terraform 1.4.2
+        become: true
+        unarchive:
+          src: 'https://releases.hashicorp.com/terraform/1.4.2/terraform_1.4.2_linux_amd64.zip'
+          dest: /usr/local/bin
+          remote_src: yes
+
+    - block:
+      - name: Installing Google Cloud SDK Key
+        become: true
+        apt_key:
+          url: 'https://packages.cloud.google.com/apt/doc/apt-key.gpg'
+          state: present
+      - name: Installing Google Cloud SDK Repository
+        become: true
+        apt_repository:
+          repo: 'deb [arch=amd64] https://packages.cloud.google.com/apt cloud-sdk main'
+          state: present
+          filename: google-cloud-sdk
+      - name: Installing Google Cloud SDK
+        become: true
+        apt:
+          name: google-cloud-sdk
+
+          
+    - block:
+      - name: Installing Microsoft Key
+        become: true
+        apt_key:
+          url: 'https://packages.microsoft.com/keys/microsoft.asc'
+          state: present
+      - name: Installing VSCode Repository
+        become: true
+        apt_repository:
+          repo: 'deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main'
+          state: present
+          filename: vscode
+      - name: Install Visual Studio Code
+        become: true
+        apt:
+          name: code
+
+    - block: 
+      - name: Installing Docker Key
+        become: true
+        apt_key:
+          url: 'https://download.docker.com/linux/ubuntu/gpg'
+          state: present
+      - name: Installing Docker Repository
+        become: true
+        apt_repository:
+          repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable'
+          state: present
+          filename: docker-ce
+      - name: Installing Docker
+        become: true
+        apt:
+          name: docker-ce
+      - name: Adding existing user to group Docker
+        become: yes
+        user: 
+          name: '{{ ansible_user_id }}'
+          groups: docker 
+          append: yes
+      - name: Installing Docker-Compose
+        become: true
+        get_url:
+          url: 'https://github.com/docker/compose/releases/download/v2.17.2/docker-compose-linux-x86_64'
+          dest: '/usr/local/bin/docker-compose'
+          mode: 755
+      - name: Installing Docker Machine Bash Completion
+        become: true
+        get_url:
+          url: 'https://raw.githubusercontent.com/docker/machine/v0.16.0/contrib/completion/bash/docker-machine.bash'
+          dest: '/etc/bash_completion.d/docker-machine'
+      - name: Installing Docker-Compose Bash Completion
+        become: true
+        get_url:
+          url: 'https://raw.githubusercontent.com/docker/compose/1.26.2/contrib/completion/bash/docker-compose'
+          dest: '/etc/bash_completion.d/docker-compose'
+        
+    - block:
+      - name: Installing Kubectl 1.26.0
+        become: true
+        get_url:    
+          url: 'https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl'
+          dest: /usr/local/bin/kubectl
+          mode: 755
+      - name: Downloading Kubectx and Kubens 
+        become: true
+        git:
+          repo: 'https://github.com/ahmetb/kubectx'
+          dest: /opt/kubectx 
+      - name: Creating Symlink to kubectx and kubens 
+        become: true
+        file:
+          src: '/opt/kubectx/{{ item }}'
+          dest: '/usr/local/bin/{{ item }}'
+          state: link
+        with_items:
+          - kubectx
+          - kubens  
+          
+    - block:
+      - name: Adding Longsleep/Golang Backports Repository
+        become: true
+        apt_repository:
+          repo: 'ppa:longsleep/golang-backports'
+      - name: Installing Golang 
+        become: true
+        apt:
+          name: golang-go
+
+    - block:
+      - name: Installing obsproject Ubuntu Repo
+        become: true
+        apt_repository:
+          repo: 'ppa:obsproject/obs-studio'
+      - name: Installing obs Studio
+        become: true
+        apt:
+          name: obs-studio
+
+    - block:
+      - name: Adding Ulauncher Repository
+        become: true
+        apt_repository:
+          repo: 'ppa:agornostal/ulauncher'
+      - name: Installing Ulauncher
+        become: true
+        apt:
+          name: ulauncher
+
+    - block:    
+      - name: Criar diretório autostart do gnome
+        shell: mkdir -p ~/.config/autostart/     
+      - name: Copiar arquivo Flameshot para autostart
+        copy: 
+          src: ./Flameshot.desktop
+          dest: ~/.config/autostart/Flameshot.desktop
